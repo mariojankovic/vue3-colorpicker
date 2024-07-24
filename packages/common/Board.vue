@@ -4,8 +4,6 @@
     :class="['vc-saturation', { 'vc-saturation__chrome': round, 'vc-saturation__hidden': hide }]"
     :style="{ backgroundColor: state.hueColor }"
     @mousedown="onClickBoard"
-    @mousemove="onDrag"
-    @mouseup="onDragEnd"
   >
     <div class="vc-saturation__white"></div>
     <div class="vc-saturation__black"></div>
@@ -16,7 +14,16 @@
 </template>
 
 <script lang="ts">
-  import { computed, defineComponent, getCurrentInstance, nextTick, reactive, ref } from "vue";
+  import {
+    computed,
+    defineComponent,
+    getCurrentInstance,
+    nextTick,
+    reactive,
+    ref,
+    onMounted,
+    onBeforeUnmount,
+  } from "vue";
   import propTypes from "vue-types";
   import { clamp, Color } from "../utils/color";
   import { tryOnMounted, whenever } from "@vueuse/core";
@@ -50,7 +57,6 @@
       const cursorLeft = ref(0);
 
       const cursorElement = ref<HTMLElement | null>();
-      // const boardElement = ref<HTMLElement | null>();
 
       const getCursorStyle = computed(() => {
         return {
@@ -71,6 +77,8 @@
       const onClickBoard = (event: MouseEvent) => {
         mousedown = true;
         handleDrag(event as MouseEvent);
+        document.addEventListener("mousemove", onDrag);
+        document.addEventListener("mouseup", onDragEnd);
       };
 
       const onDrag = (event: MouseEvent) => {
@@ -81,6 +89,8 @@
 
       const onDragEnd = () => {
         mousedown = false;
+        document.removeEventListener("mousemove", onDrag);
+        document.removeEventListener("mouseup", onDragEnd);
       };
 
       const handleDrag = (event: MouseEvent) => {
@@ -127,6 +137,15 @@
         },
         { deep: true }
       );
+
+      onMounted(() => {
+        document.addEventListener("mouseup", onDragEnd);
+      });
+
+      onBeforeUnmount(() => {
+        document.removeEventListener("mouseup", onDragEnd);
+        document.removeEventListener("mousemove", onDrag);
+      });
 
       return { state, cursorElement, getCursorStyle, onClickBoard, onDrag, onDragEnd };
     },
